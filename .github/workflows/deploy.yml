@@ -1,5 +1,5 @@
 name: Deploy cicd-pipeline to EC2
- 
+
 on:
   push:
     branches:
@@ -23,9 +23,6 @@ jobs:
       - name: Deploy to EC2
         run: |
           ssh ubuntu@13.62.55.194 << 'EOF'
-            whoami
-            hostname
-
             cd /home/ubuntu/cicd-pipeline
             git pull origin main
 
@@ -38,4 +35,4 @@ jobs:
               --restart always \
               -p 8000:8000 \
               cicd-backend
-          EOF    to get ssh key : cat ~/.ssh/id_rsa    for copy ssh ke : pbcopy < ~/.ssh/id_rsa
+          EOF
