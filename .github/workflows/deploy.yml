@@ -1,4 +1,4 @@
-name: Deploy cicd-pipeline to EC2
+name: Deploy to EC2 (Docker)
 
 on:
   push:
@@ -16,13 +16,21 @@ jobs:
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          echo "${{ secrets.EC2_SSH_KEY }}" | base64 --decode > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
+
           ssh-keyscan -H 13.62.55.194 >> ~/.ssh/known_hosts
+
+          echo "🔍 SSH key fingerprint:"
+          ssh-keygen -lf ~/.ssh/id_rsa
 
       - name: Deploy to EC2
         run: |
-          ssh ubuntu@13.62.55.194 << 'EOF'
+          ssh -i ~/.ssh/id_rsa \
+              -o IdentitiesOnly=yes \
+              -o StrictHostKeyChecking=yes \
+              ubuntu@13.62.55.194 << 'EOF'
+            set -e
             cd /home/ubuntu/cicd-pipeline
             git pull origin main
 
