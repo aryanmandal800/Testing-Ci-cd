@@ -1,4 +1,4 @@
-name: Deploy cicd-pipeline to EC2
+name: Deploy to EC2 (Docker)
 
 on:
   push:
@@ -13,31 +13,37 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup SSH Agent
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: |
-            ${{ secrets.EC2_SSH_KEY }}
-
-      - name: Add EC2 host
+      - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" | base64 --decode > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H 13.62.55.194 >> ~/.ssh/known_hosts
 
       - name: Deploy to EC2
         run: |
           ssh ubuntu@13.62.55.194 << 'EOF'
             set -e
+
+            echo "📦 Moving to project directory"
             cd /home/ubuntu/cicd-pipeline
+
+            echo "🔄 Pulling latest code"
             git pull origin main
 
+            echo "🛑 Stopping old container (if exists)"
             docker stop cicd-backend || true
             docker rm cicd-backend || true
 
+            echo "🐳 Building Docker image"
             docker build -t cicd-backend .
+
+            echo "🚀 Running new container"
             docker run -d \
               --name cicd-backend \
               --restart always \
               -p 8000:8000 \
               cicd-backend
+
+            echo "✅ Deployment successful"
           EOF
